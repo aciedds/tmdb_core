@@ -3,7 +3,7 @@
 `tmdb_core` adalah package data/domain untuk integrasi TMDB yang sudah menyiapkan:
 
 - konfigurasi environment API,
-- inisialisasi service (`Dio` dan `Hive`),
+- inisialisasi service (`Dio` dan `SharedPreferences`),
 - repository siap pakai,
 - kumpulan use case siap inject (`TmdbCoreUseCases`).
 
@@ -115,3 +115,4 @@ final searchResult = await useCases.getSearchFilmUc('interstellar');
 
 - Selalu panggil `TmdbCore.initialize()` sebelum memanggil factory lain.
 - Jika butuh reset dependency cache (misalnya untuk test), gunakan `TmdbCore.reset()`.
+- Local storage internal package menggunakan `SharedPreferences`.
