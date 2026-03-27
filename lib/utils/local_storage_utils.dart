@@ -11,7 +11,7 @@ export "package:hive_flutter/hive_flutter.dart";
 
 /// Enhanced HiveUtils for secure and efficient local storage
 /// Provides type-safe operations, error handling, and performance optimizations
-class HiveUtils {
+class LocalStorageUtils {
   final Box<dynamic> _box;
   static const String _baseStorage = "hive_storage";
   static const String _encryptedStorage = "hive_encrypted_storage";
@@ -22,10 +22,10 @@ class HiveUtils {
   static const String _userPreferencesKey = "user_preferences";
   static const String _cacheKey = "cache";
 
-  HiveUtils._(this._box);
+  LocalStorageUtils._(this._box);
 
   /// Create HiveUtils instance with optional encryption
-  static Future<HiveUtils> instance({bool encrypted = false}) async {
+  static Future<LocalStorageUtils> instance({bool encrypted = false}) async {
     try {
       final boxName = encrypted ? _encryptedStorage : _baseStorage;
 
@@ -37,7 +37,7 @@ class HiveUtils {
         debugPrint('📦 HiveUtils initialized with box: $boxName');
       }
 
-      return HiveUtils._(box);
+      return LocalStorageUtils._(box);
     } catch (e) {
       debugPrint('❌ Failed to initialize HiveUtils: $e');
       rethrow;

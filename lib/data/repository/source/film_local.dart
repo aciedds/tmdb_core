@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:tmdb_core/data/model/film_model/film_model.dart';
 import 'package:tmdb_core/data/model/genre_model/genre_model.dart';
 import 'package:tmdb_core/state/data_state/data_state.dart';
-import 'package:tmdb_core/utils/hive_utils.dart';
+import 'package:tmdb_core/utils/local_storage_utils.dart';
 
 /// Enhanced FilmLocal repository for local storage operations
 /// Provides type-safe operations with comprehensive error handling
 class FilmLocal {
-  final HiveUtils _hiveUtils;
+  final LocalStorageUtils _localStorageUtils;
 
-  FilmLocal(this._hiveUtils);
+  FilmLocal(this._localStorageUtils);
 
   // Storage keys
   static const String _watchlistKey = 'watchList';
@@ -50,7 +50,7 @@ class FilmLocal {
             }
           }
 
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _watchlistKey,
             data: temp,
           );
@@ -62,7 +62,7 @@ class FilmLocal {
         error: (message, data, exception, stackTrace, statusCode) async {
           // If no existing data, create new list
           List<FilmModel> temp = [watchlistData];
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _watchlistKey,
             data: temp,
           );
@@ -84,7 +84,7 @@ class FilmLocal {
   /// Get watchlist with enhanced error handling
   Future<DataState<List<FilmModel>>> getListWatchlist() async {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _watchlistKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _watchlistKey);
 
       if (result == null || result.isEmpty) {
         if (kDebugMode) {
@@ -112,7 +112,7 @@ class FilmLocal {
   /// Check if film is in watchlist
   DataState<bool> isOnWatchlist(int id) {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _watchlistKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _watchlistKey);
 
       if (result == null || result.isEmpty) {
         return DataState.success(data: false);
@@ -141,7 +141,7 @@ class FilmLocal {
         debugPrint('🗑️ Removing film ID $id from watchlist');
       }
 
-      final result = _hiveUtils.get<List<FilmModel>>(key: _watchlistKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _watchlistKey);
 
       if (result == null || result.isEmpty) {
         return DataState.error(message: 'Watchlist is empty');
@@ -149,7 +149,7 @@ class FilmLocal {
 
       final updatedList = result.where((element) => element.id != id).toList();
 
-      final success = await _hiveUtils.set<List<dynamic>>(
+      final success = await _localStorageUtils.set<List<dynamic>>(
         key: _watchlistKey,
         data: updatedList,
       );
@@ -200,7 +200,7 @@ class FilmLocal {
             }
           }
 
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _favoriteKey,
             data: temp,
           );
@@ -212,7 +212,7 @@ class FilmLocal {
         error: (message, data, exception, stackTrace, statusCode) async {
           // If no existing data, create new list
           List<FilmModel> temp = [favoriteData];
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _favoriteKey,
             data: temp,
           );
@@ -234,7 +234,7 @@ class FilmLocal {
   /// Get favorites list with enhanced error handling
   Future<DataState<List<FilmModel>>> getListFavorite() async {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _favoriteKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _favoriteKey);
 
       if (result == null || result.isEmpty) {
         if (kDebugMode) {
@@ -262,7 +262,7 @@ class FilmLocal {
   /// Check if film is in favorites
   DataState<bool> isOnFavorited(int id) {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _favoriteKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _favoriteKey);
 
       if (result == null || result.isEmpty) {
         return DataState.success(data: false);
@@ -291,7 +291,7 @@ class FilmLocal {
         debugPrint('🗑️ Removing film ID $id from favorites');
       }
 
-      final result = _hiveUtils.get<List<FilmModel>>(key: _favoriteKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _favoriteKey);
 
       if (result == null || result.isEmpty) {
         return DataState.error(message: 'Favorites list is empty');
@@ -299,7 +299,7 @@ class FilmLocal {
 
       final updatedList = result.where((element) => element.id != id).toList();
 
-      final success = await _hiveUtils.set<List<dynamic>>(
+      final success = await _localStorageUtils.set<List<dynamic>>(
         key: _favoriteKey,
         data: updatedList,
       );
@@ -328,7 +328,7 @@ class FilmLocal {
         debugPrint('🎭 Storing ${data.length} genres');
       }
 
-      final success = await _hiveUtils.set<List<GenreModel>>(
+      final success = await _localStorageUtils.set<List<GenreModel>>(
         key: _genreKey,
         data: data,
       );
@@ -348,7 +348,7 @@ class FilmLocal {
   /// Get genre list with caching
   Future<DataState<List<GenreModel>>> getGenreList() async {
     try {
-      final result = _hiveUtils.get<List<GenreModel>>(key: _genreKey);
+      final result = _localStorageUtils.get<List<GenreModel>>(key: _genreKey);
 
       if (result == null || result.isEmpty) {
         if (kDebugMode) {
@@ -394,7 +394,7 @@ class FilmLocal {
             }
           }
 
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _popularKey,
             data: temp,
           );
@@ -411,7 +411,7 @@ class FilmLocal {
         },
         error: (message, data, exception, stackTrace, statusCode) async {
           // If no existing data, create new list
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _popularKey,
             data: popularList,
           );
@@ -435,7 +435,7 @@ class FilmLocal {
   /// Get popular films list
   Future<DataState<List<FilmModel>>> getListPopular() async {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _popularKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _popularKey);
 
       if (result == null || result.isEmpty) {
         if (kDebugMode) {
@@ -467,7 +467,7 @@ class FilmLocal {
         debugPrint('🧹 Clearing popular films list');
       }
 
-      final success = await _hiveUtils.delete(_popularKey);
+      final success = await _localStorageUtils.delete(_popularKey);
 
       return success
           ? DataState.success(data: true)
@@ -502,7 +502,7 @@ class FilmLocal {
             }
           }
 
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _nowPlayingKey,
             data: temp,
           );
@@ -519,7 +519,7 @@ class FilmLocal {
         },
         error: (message, data, exception, stackTrace, statusCode) async {
           // If no existing data, create new list
-          final success = await _hiveUtils.set<List<FilmModel>>(
+          final success = await _localStorageUtils.set<List<FilmModel>>(
             key: _nowPlayingKey,
             data: nowPlayingList,
           );
@@ -543,7 +543,7 @@ class FilmLocal {
   /// Get now playing films list
   Future<DataState<List<FilmModel>>> getListNowPlaying() async {
     try {
-      final result = _hiveUtils.get<List<FilmModel>>(key: _nowPlayingKey);
+      final result = _localStorageUtils.get<List<FilmModel>>(key: _nowPlayingKey);
 
       if (result == null || result.isEmpty) {
         if (kDebugMode) {
@@ -575,7 +575,7 @@ class FilmLocal {
         debugPrint('🧹 Clearing now playing films list');
       }
 
-      final success = await _hiveUtils.delete(_nowPlayingKey);
+      final success = await _localStorageUtils.delete(_nowPlayingKey);
 
       return success
           ? DataState.success(data: true)
@@ -593,14 +593,14 @@ class FilmLocal {
   Map<String, dynamic> getStorageStats() {
     return {
       'watchlistCount':
-          _hiveUtils.get<List<dynamic>>(key: _watchlistKey)?.length ?? 0,
+          _localStorageUtils.get<List<dynamic>>(key: _watchlistKey)?.length ?? 0,
       'favoritesCount':
-          _hiveUtils.get<List<dynamic>>(key: _favoriteKey)?.length ?? 0,
-      'genresCount': _hiveUtils.get<List<dynamic>>(key: _genreKey)?.length ?? 0,
+          _localStorageUtils.get<List<dynamic>>(key: _favoriteKey)?.length ?? 0,
+      'genresCount': _localStorageUtils.get<List<dynamic>>(key: _genreKey)?.length ?? 0,
       'popularCount':
-          _hiveUtils.get<List<dynamic>>(key: _popularKey)?.length ?? 0,
+          _localStorageUtils.get<List<dynamic>>(key: _popularKey)?.length ?? 0,
       'nowPlayingCount':
-          _hiveUtils.get<List<dynamic>>(key: _nowPlayingKey)?.length ?? 0,
+          _localStorageUtils.get<List<dynamic>>(key: _nowPlayingKey)?.length ?? 0,
     };
   }
 
@@ -612,7 +612,7 @@ class FilmLocal {
       }
 
       final keys = [_popularKey, _nowPlayingKey, _genreKey];
-      final deletedCount = await _hiveUtils.deleteAll(keys);
+      final deletedCount = await _localStorageUtils.deleteAll(keys);
 
       if (kDebugMode) {
         debugPrint('✅ Cleared $deletedCount cache entries');
