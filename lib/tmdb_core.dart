@@ -23,7 +23,7 @@ import 'package:tmdb_core/domain/usecase/remove_from_favorite_uc.dart';
 import 'package:tmdb_core/domain/usecase/remove_from_watchlist_uc.dart';
 import 'package:tmdb_core/utils/dio_utils.dart';
 import 'package:tmdb_core/utils/environment_config.dart';
-import 'package:tmdb_core/utils/hive_utils.dart';
+import 'package:tmdb_core/utils/local_storage_utils.dart';
 
 export 'domain/entity/film_entity/film_entity.dart';
 export 'domain/entity/genre_entity/genre_entity.dart';
@@ -86,8 +86,8 @@ class TmdbCore {
 
 
       // 3) Build low-level services.
-      final hiveUtils = await HiveUtils.instance();
-      _filmLocal = FilmLocal(hiveUtils);
+      final localStorageUtils = await LocalStorageUtils.instance();
+      _filmLocal = FilmLocal(localStorageUtils);
 
       final dio = await DioUtils.client();
       _filmRemote = FilmRemote(dio);

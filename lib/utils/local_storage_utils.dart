@@ -6,7 +6,7 @@ import 'package:tmdb_core/data/model/genre_model/genre_model.dart';
 
 /// Enhanced local storage utils backed by SharedPreferences.
 /// Provides type-safe operations, error handling, and performance optimizations
-class HiveUtils {
+class LocalStorageUtils {
   final SharedPreferences _prefs;
   static const String _baseStorage = "hive_storage";
   static const String _encryptedStorage = "hive_encrypted_storage";
@@ -17,10 +17,10 @@ class HiveUtils {
   static const String _userPreferencesKey = "user_preferences";
   static const String _cacheKey = "cache";
 
-  HiveUtils._(this._prefs);
+  LocalStorageUtils._(this._prefs);
 
   /// Create HiveUtils instance with optional encryption
-  static Future<HiveUtils> instance({bool encrypted = false}) async {
+  static Future<LocalStorageUtils> instance({bool encrypted = false}) async {
     try {
       final boxName = encrypted ? _encryptedStorage : _baseStorage;
 
@@ -28,10 +28,10 @@ class HiveUtils {
       final prefs = await SharedPreferences.getInstance();
 
       if (kDebugMode) {
-        debugPrint('📦 HiveUtils initialized with storage: $boxName');
+        debugPrint('📦 LocalStorageUtils initialized with storage: $boxName');
       }
 
-      return HiveUtils._(prefs);
+      return LocalStorageUtils._(prefs);
     } catch (e) {
       debugPrint('❌ Failed to initialize HiveUtils: $e');
       rethrow;
