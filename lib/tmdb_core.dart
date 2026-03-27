@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tmdb_core/data/repository/film_repository_impl.dart';
 import 'package:tmdb_core/data/repository/source/film_local.dart';
 import 'package:tmdb_core/data/repository/source/film_remote.dart';
@@ -8,8 +6,6 @@ import 'package:tmdb_core/domain/mapper/film_mapper.dart';
 import 'package:tmdb_core/domain/mapper/genre_mapper.dart';
 import 'package:tmdb_core/domain/mapper/video_mapper.dart';
 import 'package:tmdb_core/domain/repository/film_repository.dart';
-import 'package:tmdb_core/data/model/film_model/film_model_adapter.dart';
-import 'package:tmdb_core/data/model/genre_model/genre_model_adapter.dart';
 import 'package:tmdb_core/domain/usecase/add_favorite_uc.dart';
 import 'package:tmdb_core/domain/usecase/add_watchlist_uc.dart';
 import 'package:tmdb_core/domain/usecase/get_favorite_uc.dart';
@@ -88,14 +84,6 @@ class TmdbCore {
         debugMode: debugMode,
       );
 
-      // 2) Initialize Hive and register adapters once.
-      await Hive.initFlutter();
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(FilmModelAdapterAdapter());
-      }
-      if (!Hive.isAdapterRegistered(1)) {
-        Hive.registerAdapter(GenreModelAdapterAdapter());
-      }
 
       // 3) Build low-level services.
       final hiveUtils = await HiveUtils.instance();

@@ -1,18 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tmdb_core/data/model/film_model/film_model.dart';
-import 'package:tmdb_core/data/model/film_model/film_model_adapter.dart';
 import 'package:tmdb_core/data/model/genre_model/genre_model.dart';
-import 'package:tmdb_core/data/model/genre_model/genre_model_adapter.dart';
 
-//Export hive
-export "package:hive_flutter/hive_flutter.dart";
-
-/// Enhanced HiveUtils for secure and efficient local storage
+/// Enhanced local storage utils backed by SharedPreferences.
 /// Provides type-safe operations, error handling, and performance optimizations
 class HiveUtils {
-  final Box<dynamic> _box;
+  final SharedPreferences _prefs;
   static const String _baseStorage = "hive_storage";
   static const String _encryptedStorage = "hive_encrypted_storage";
 
@@ -22,22 +17,21 @@ class HiveUtils {
   static const String _userPreferencesKey = "user_preferences";
   static const String _cacheKey = "cache";
 
-  HiveUtils._(this._box);
+  HiveUtils._(this._prefs);
 
   /// Create HiveUtils instance with optional encryption
   static Future<HiveUtils> instance({bool encrypted = false}) async {
     try {
       final boxName = encrypted ? _encryptedStorage : _baseStorage;
 
-      // For now, disable encryption to avoid key issues
-      // TODO: Implement proper encryption key management
-      final box = await Hive.openBox(boxName);
+      // SharedPreferences does not support custom box names/encryption.
+      final prefs = await SharedPreferences.getInstance();
 
       if (kDebugMode) {
-        debugPrint('📦 HiveUtils initialized with box: $boxName');
+        debugPrint('📦 HiveUtils initialized with storage: $boxName');
       }
 
-      return HiveUtils._(box);
+      return HiveUtils._(prefs);
     } catch (e) {
       debugPrint('❌ Failed to initialize HiveUtils: $e');
       rethrow;
@@ -55,22 +49,18 @@ class HiveUtils {
         throw ArgumentError('Data cannot be null when validation is enabled');
       }
 
-      // Handle specific model types with adapters
-      dynamic dataToStore;
+      bool success;
       if (data is List<FilmModel>) {
-        dataToStore = data
-            .map((film) => FilmModelAdapter.fromFilmModel(film))
-            .toList();
+        final dataToStore = data.map((film) => film.toJson()).toList();
+        success = await _prefs.setString(key, jsonEncode(dataToStore));
       } else if (data is List<GenreModel>) {
-        dataToStore = data
-            .map((genre) => GenreModelAdapter.fromGenreModel(genre))
-            .toList();
+        final dataToStore = data.map((genre) => genre.toJson()).toList();
+        success = await _prefs.setString(key, jsonEncode(dataToStore));
       } else {
-        // Convert data to JSON if it's not a primitive type
-        dataToStore = _serializeData(data);
+        success = await _writeValue(key, _serializeData(data));
       }
 
-      await _box.put(key, dataToStore);
+      if (!success) return false;
 
       if (kDebugMode) {
         debugPrint('💾 Stored data for key: $key (${data.runtimeType})');
@@ -86,14 +76,14 @@ class HiveUtils {
   /// Retrieve data with type safety and error handling
   T? get<T>({required String key, T? defaultValue}) {
     try {
-      if (!_box.containsKey(key)) {
+      if (!_prefs.containsKey(key)) {
         if (kDebugMode) {
           debugPrint('🔍 Key not found: $key');
         }
         return defaultValue;
       }
 
-      final data = _box.get(key);
+      final data = _prefs.get(key);
       if (data == null) {
         return defaultValue;
       }
@@ -101,18 +91,38 @@ class HiveUtils {
       // Handle specific model types with adapters
       T? deserializedData;
       if (T == List<FilmModel>) {
-        if (data is List) {
-          deserializedData =
-              data.map((e) => (e as FilmModelAdapter).toFilmModel()).toList()
-                  as T;
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is List) {
+            deserializedData =
+                decoded
+                        .map(
+                          (e) =>
+                              FilmModel.fromJson(Map<String, dynamic>.from(e)),
+                        )
+                        .toList()
+                    as T;
+          } else {
+            deserializedData = defaultValue;
+          }
         } else {
           deserializedData = defaultValue;
         }
       } else if (T == List<GenreModel>) {
-        if (data is List) {
-          deserializedData =
-              data.map((e) => (e as GenreModelAdapter).toGenreModel()).toList()
-                  as T;
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is List) {
+            deserializedData =
+                decoded
+                        .map(
+                          (e) =>
+                              GenreModel.fromJson(Map<String, dynamic>.from(e)),
+                        )
+                        .toList()
+                    as T;
+          } else {
+            deserializedData = defaultValue;
+          }
         } else {
           deserializedData = defaultValue;
         }
@@ -136,30 +146,30 @@ class HiveUtils {
 
   /// Check if key exists
   bool containsKey(String key) {
-    return _box.containsKey(key);
+    return _prefs.containsKey(key);
   }
 
   /// Get all keys
   Iterable<String> getAllKeys() {
-    return _box.keys.cast<String>();
+    return _prefs.getKeys();
   }
 
   /// Get all values
   Iterable<dynamic> getAllValues() {
-    return _box.values;
+    return _prefs.getKeys().map((key) => _prefs.get(key));
   }
 
   /// Delete specific key
   Future<bool> delete(String key) async {
     try {
-      if (!_box.containsKey(key)) {
+      if (!_prefs.containsKey(key)) {
         if (kDebugMode) {
           debugPrint('⚠️ Key not found for deletion: $key');
         }
         return false;
       }
 
-      await _box.delete(key);
+      await _prefs.remove(key);
 
       if (kDebugMode) {
         debugPrint('🗑️ Deleted data for key: $key');
@@ -177,8 +187,8 @@ class HiveUtils {
     try {
       int deletedCount = 0;
       for (final key in keys) {
-        if (_box.containsKey(key)) {
-          await _box.delete(key);
+        if (_prefs.containsKey(key)) {
+          await _prefs.remove(key);
           deletedCount++;
         }
       }
@@ -199,7 +209,7 @@ class HiveUtils {
   /// Clear all data
   Future<bool> reset() async {
     try {
-      await _box.clear();
+      await _prefs.clear();
 
       if (kDebugMode) {
         debugPrint('🔄 Hive storage reset successfully');
@@ -215,7 +225,7 @@ class HiveUtils {
   /// Get storage size in bytes
   Future<int> getStorageSize() async {
     try {
-      return _box.length;
+      return _prefs.getKeys().length;
     } catch (e) {
       debugPrint('❌ Failed to get storage size: $e');
       return 0;
@@ -227,14 +237,11 @@ class HiveUtils {
     final results = <String, bool>{};
 
     try {
-      // Use batch write for better performance
-      await _box.putAll(
-        dataMap.map((key, value) => MapEntry(key, _serializeData(value))),
-      );
-
-      // Mark all as successful
-      for (final key in dataMap.keys) {
-        results[key] = true;
+      for (final entry in dataMap.entries) {
+        results[entry.key] = await _writeValue(
+          entry.key,
+          _serializeData(entry.value),
+        );
       }
 
       if (kDebugMode) {
@@ -376,13 +383,21 @@ class HiveUtils {
 
   /// Serialize data for storage
   dynamic _serializeData<T>(T data) {
+    if (data is List<FilmModel>) {
+      return jsonEncode(data.map((film) => film.toJson()).toList());
+    }
+    if (data is List<GenreModel>) {
+      return jsonEncode(data.map((genre) => genre.toJson()).toList());
+    }
     if (data is String ||
         data is int ||
         data is double ||
         data is bool ||
-        data is List ||
-        data is Map) {
+        data is List<String>) {
       return data;
+    }
+    if (data is List || data is Map) {
+      return jsonEncode(data);
     }
 
     // Convert custom objects to JSON
@@ -416,26 +431,42 @@ class HiveUtils {
 
   /// Close the Hive box
   Future<void> close() async {
-    try {
-      await _box.close();
-      if (kDebugMode) {
-        debugPrint('🔒 Hive box closed');
-      }
-    } catch (e) {
-      debugPrint('❌ Failed to close Hive box: $e');
+    if (kDebugMode) {
+      debugPrint('🔒 SharedPreferences storage closed (no-op)');
     }
   }
 
   /// Get storage statistics
   Map<String, dynamic> getStorageStats() {
     return {
-      'totalKeys': _box.length,
+      'totalKeys': _prefs.getKeys().length,
       'favoritesCount': getFavorites().length,
       'watchlistCount': getWatchlist().length,
       'cacheKeys': getAllKeys()
           .where((key) => key.startsWith('${_cacheKey}_'))
           .length,
-      'isOpen': _box.isOpen,
+      'isOpen': true,
     };
+  }
+
+  Future<bool> _writeValue(String key, dynamic value) async {
+    if (value is String) {
+      return _prefs.setString(key, value);
+    }
+    if (value is int) {
+      return _prefs.setInt(key, value);
+    }
+    if (value is double) {
+      return _prefs.setDouble(key, value);
+    }
+    if (value is bool) {
+      return _prefs.setBool(key, value);
+    }
+    if (value is List<String>) {
+      return _prefs.setStringList(key, value);
+    }
+
+    // Fallback to JSON string for unsupported types.
+    return _prefs.setString(key, jsonEncode(value));
   }
 }
