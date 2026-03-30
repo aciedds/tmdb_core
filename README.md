@@ -1,3 +1,17 @@
+## Overview
+
+`tmdb_core` adalah internal SDK yang membungkus akses ke TMDB API dengan pendekatan Clean Architecture.
+
+Tujuan utama package ini:
+- mempercepat development (zero setup networking & storage),
+- menyediakan standard akses data (repository & use case),
+- tetap fleksibel untuk kebutuhan custom.
+
+Package ini menggunakan pola:
+- Repository pattern
+- Multi data source (remote + local)
+- Use case based access
+
 # tmdb_core
 
 `tmdb_core` adalah package data/domain untuk integrasi TMDB yang sudah menyiapkan:
